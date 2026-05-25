@@ -23,4 +23,6 @@ class Puzzle(Base):
     audio_url = Column(String(255))
 
     image_url = Column(String(255))
+
+    hint = Column(Text)
  

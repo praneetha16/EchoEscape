@@ -1,8 +1,12 @@
-function MainLayout({ children }) {
+import Navbar from "../components/Navbar"
+
+export default function MainLayout({ children }) {
   return (
-<div className="min-h-screen bg-slate-950 text-white">
-      {children}
-</div>
+    <div className="min-h-screen text-white" style={{ background: "#05050F" }}>
+      <Navbar />
+      <div className="pt-16">
+        {children}
+      </div>
+    </div>
   )
 }
-export default MainLayout

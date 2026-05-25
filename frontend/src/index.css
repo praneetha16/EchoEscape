@@ -1,8 +1,1 @@
-@import "tailwindcss";
-body {
-  margin: 0;
-  padding: 0;
-  background: #0f172a;
-  color: white;
-  font-family: Arial, sans-serif;
-}
+/* Tailwind and all styles are loaded via src/styles/global.css (imported in main.jsx) */

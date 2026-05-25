@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"E:\\\\EchoEscape\" -Recurse -Exclude \"venv\", \"node_modules\", \"__pycache__\", \".git\" -File | Where-Object {$_.Extension -in @\\('.jsx', '.js', '.css', '.py', '.json', '.html', '.tsx', '.ts'\\)} | Sort-Object FullName | Select-Object FullName)"
+    ]
+  }
+}
