@@ -4,7 +4,77 @@ import { motion, AnimatePresence } from "framer-motion"
 import MainLayout from "../layouts/MainLayout"
 import { getPuzzlesByRoom, submitPuzzleAnswer } from "../services/puzzleService"
 import { markPuzzleComplete, getCompletedPuzzlesForRoom } from "../services/progressService"
+import { getRoom } from "../services/roomService"
 import { useAuth } from "../context/AuthContext"
+
+/* ── Timer config by difficulty ─────────────────────────── */
+const TIMER_SECONDS = { easy: 30, medium: 30, hard: 30 }
+
+function useTimer(seconds, active) {
+  const [timeLeft, setTimeLeft] = useState(seconds)
+  const intervalRef = useRef(null)
+
+  // Reset whenever the allotted seconds changes (new puzzle)
+  useEffect(() => { setTimeLeft(seconds) }, [seconds])
+
+  useEffect(() => {
+    if (!active || timeLeft <= 0) { clearInterval(intervalRef.current); return }
+    intervalRef.current = setInterval(() => setTimeLeft(t => t - 1), 1000)
+    return () => clearInterval(intervalRef.current)
+  }, [active, timeLeft])
+
+  const reset = (s) => { clearInterval(intervalRef.current); setTimeLeft(s) }
+  return { timeLeft, reset }
+}
+
+function TimerDisplay({ timeLeft, totalSeconds }) {
+  const pct     = (timeLeft / totalSeconds) * 100
+  const mins    = Math.floor(timeLeft / 60)
+  const secs    = (timeLeft % 60).toString().padStart(2, "0")
+  const urgent  = timeLeft <= 20
+  const warning = timeLeft <= 60 && timeLeft > 20
+
+  const color = urgent ? "#F87171" : warning ? "#F59E0B" : "#34D399"
+  const glow  = urgent
+    ? "0 0 16px rgba(248,113,113,0.6)"
+    : warning
+    ? "0 0 16px rgba(245,158,11,0.4)"
+    : "0 0 12px rgba(52,211,153,0.4)"
+
+  return (
+    <div className="flex items-center gap-3">
+      {/* Circular countdown */}
+      <div className="relative w-12 h-12 shrink-0">
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2.5" />
+          <circle cx="18" cy="18" r="15.9" fill="none"
+            stroke={color} strokeWidth="2.5"
+            strokeDasharray={`${pct} 100`} strokeLinecap="round"
+            style={{ transition: "stroke-dasharray 1s linear, stroke 0.5s", filter: `drop-shadow(${glow})` }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <motion.span
+            animate={urgent && timeLeft > 0 ? { scale: [1, 1.2, 1] } : {}}
+            transition={{ repeat: Infinity, duration: 0.8 }}
+            className="text-[10px] font-black"
+            style={{ color, fontFamily: "'Orbitron',Arial,sans-serif" }}>
+            {timeLeft > 0 ? `${mins}:${secs}` : "0:00"}
+          </motion.span>
+        </div>
+      </div>
+
+      {/* Bar */}
+      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
+        <motion.div className="h-full rounded-full"
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 1, ease: "linear" }}
+          style={{ background: color, boxShadow: glow }}
+        />
+      </div>
+    </div>
+  )
+}
 
 /* ── Custom Audio Player ─────────────────────────── */
 function AudioPlayer({ src }) {
@@ -143,26 +213,43 @@ function PuzzlePage() {
   const navigate   = useNavigate()
   const { user }   = useAuth()
 
-  const [puzzles,             setPuzzles]             = useState([])
-  const [currentPuzzleIndex,  setCurrentPuzzleIndex]  = useState(0)
-  const [answer,              setAnswer]              = useState("")
-  const [showHint,            setShowHint]            = useState(false)
-  const [result,              setResult]              = useState({ correct: null })
-  const [loading,             setLoading]             = useState(true)
+  const [puzzles,            setPuzzles]            = useState([])
+  const [currentPuzzleIndex, setCurrentPuzzleIndex] = useState(0)
+  const [answer,             setAnswer]             = useState("")
+  const [showHint,           setShowHint]           = useState(false)
+  const [result,             setResult]             = useState({ correct: null })
+  const [loading,            setLoading]            = useState(true)
+  const [roomDifficulty,     setRoomDifficulty]     = useState("medium")
+  const [timedOut,           setTimedOut]           = useState(false)
 
-  useEffect(() => { fetchPuzzles() }, [roomId])
+  const totalSeconds = TIMER_SECONDS[roomDifficulty?.toLowerCase()] ?? 120
+  const timerActive  = result.correct === null && !timedOut
+  const { timeLeft, reset: resetTimer } = useTimer(totalSeconds, timerActive)
 
-  const fetchPuzzles = async () => {
+  // Time's up
+  useEffect(() => {
+    if (timeLeft === 0 && timerActive) setTimedOut(true)
+  }, [timeLeft, timerActive])
+
+  useEffect(() => { fetchData() }, [roomId])
+
+  const fetchData = async () => {
     try {
-      const [puzzleData, completedIds] = await Promise.all([
+      const [puzzleData, completedIds, roomData] = await Promise.all([
         getPuzzlesByRoom(roomId),
         getCompletedPuzzlesForRoom(roomId).catch(() => []),
+        getRoom(roomId).catch(() => null),
       ])
       setPuzzles(puzzleData)
+      if (roomData?.difficulty) setRoomDifficulty(roomData.difficulty)
 
-      // Resume from the first puzzle the user hasn't completed yet
       const firstUncompleted = puzzleData.findIndex(p => !completedIds.includes(p.id))
-      setCurrentPuzzleIndex(firstUncompleted === -1 ? puzzleData.length - 1 : firstUncompleted)
+      const startIndex = firstUncompleted === -1 ? puzzleData.length - 1 : firstUncompleted
+      setCurrentPuzzleIndex(startIndex)
+      // If the landing puzzle is already solved (e.g. all done → last puzzle), show it as completed
+      if (completedIds.includes(puzzleData[startIndex]?.id)) {
+        setResult({ correct: true })
+      }
     } catch (error) {
       console.error(error)
     } finally {
@@ -173,12 +260,11 @@ function PuzzlePage() {
   const currentPuzzle = puzzles[currentPuzzleIndex]
 
   const handleSubmit = async () => {
-    if (!answer.trim()) return
+    if (!answer.trim() || timedOut) return
     try {
       const response = await submitPuzzleAnswer(currentPuzzle.id, answer)
       setResult(response)
       if (response.correct) {
-        // One row per puzzle — room completion is derived from these on the backend
         markPuzzleComplete(currentPuzzle.id).catch(() => {})
       }
     } catch (error) {
@@ -186,14 +272,14 @@ function PuzzlePage() {
     }
   }
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSubmit()
-  }
+  const handleKeyDown = (e) => { if (e.key === "Enter") handleSubmit() }
 
   const nextPuzzle = () => {
     setAnswer("")
     setShowHint(false)
     setResult({ correct: null })
+    setTimedOut(false)
+    resetTimer(totalSeconds)
     setCurrentPuzzleIndex(prev => prev + 1)
   }
 
@@ -306,38 +392,42 @@ function PuzzlePage() {
 
             {/* Puzzle list */}
             <div className="space-y-2 flex-1">
-              {puzzles.map((puzzle, index) => (
-                <div
-                  key={puzzle.id}
-                  className={`p-3.5 rounded-xl border transition-all ${
-                    index === currentPuzzleIndex
-                      ? "bg-cyan-500/10 border-cyan-500/40 shadow-[0_0_16px_rgba(34,211,238,0.15)]"
-                      : index < currentPuzzleIndex
-                      ? "bg-white/[0.03] border-white/[0.06]"
-                      : "bg-white/[0.02] border-white/[0.04]"
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-xs text-slate-500 mb-0.5">Puzzle {index + 1}</p>
-                      <p
-                        className={`text-sm font-semibold truncate max-w-[180px] ${
-                          index === currentPuzzleIndex
-                            ? "text-white"
-                            : index < currentPuzzleIndex
-                            ? "text-slate-500"
-                            : "text-slate-600"
-                        }`}
-                      >
-                        {puzzle.title}
-                      </p>
+              {puzzles.map((puzzle, index) => {
+                const isDone    = index < currentPuzzleIndex || (index === currentPuzzleIndex && result.correct === true)
+                const isCurrent = index === currentPuzzleIndex && result.correct !== true
+                return (
+                  <div
+                    key={puzzle.id}
+                    className={`p-3.5 rounded-xl border transition-all ${
+                      isCurrent
+                        ? "bg-cyan-500/10 border-cyan-500/40 shadow-[0_0_16px_rgba(34,211,238,0.15)]"
+                        : isDone
+                        ? "bg-white/[0.03] border-white/[0.06]"
+                        : "bg-white/[0.02] border-white/[0.04]"
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-xs text-slate-500 mb-0.5">Puzzle {index + 1}</p>
+                        <p
+                          className={`text-sm font-semibold truncate max-w-[180px] ${
+                            isCurrent
+                              ? "text-white"
+                              : isDone
+                              ? "text-slate-500"
+                              : "text-slate-600"
+                          }`}
+                        >
+                          {puzzle.title}
+                        </p>
+                      </div>
+                      <span className="text-base">
+                        {isDone ? "✓" : isCurrent ? "▶" : "🔒"}
+                      </span>
                     </div>
-                    <span className="text-base">
-                      {index < currentPuzzleIndex ? "✓" : index === currentPuzzleIndex ? "▶" : "🔒"}
-                    </span>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             {/* Audio visualizer */}
@@ -378,28 +468,26 @@ function PuzzlePage() {
               <div className="rounded-3xl border border-white/10 bg-black/50 backdrop-blur-2xl shadow-[0_0_60px_rgba(0,0,0,0.4)] overflow-hidden">
 
                 {/* Top bar */}
-                <div className="border-b border-white/[0.06] px-8 py-6 flex justify-between items-start">
-                  <div>
-                    <p className="text-xs tracking-[4px] text-cyan-400 uppercase mb-2">
-                      Puzzle Mission
-                    </p>
-                    <h2
-                      style={{ fontFamily: "Orbitron, Arial, sans-serif" }}
-                      className="text-2xl md:text-3xl font-black text-white"
-                    >
-                      {currentPuzzle.title}
-                    </h2>
+                <div className="border-b border-white/[0.06] px-8 pt-6 pb-5">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <p className="text-xs tracking-[4px] text-cyan-400 uppercase mb-2">Puzzle Mission</p>
+                      <h2 style={{ fontFamily:"Orbitron, Arial, sans-serif" }}
+                        className="text-2xl md:text-3xl font-black text-white">
+                        {currentPuzzle.title}
+                      </h2>
+                    </div>
+                    <div className="text-right shrink-0 ml-4">
+                      <p className="text-slate-600 text-xs tracking-widest uppercase mb-1">Puzzle</p>
+                      <p style={{ fontFamily:"Orbitron, Arial, sans-serif" }}
+                        className="text-2xl font-black text-pink-400">
+                        {currentPuzzleIndex + 1}
+                        <span className="text-slate-600 text-lg">/{puzzles.length}</span>
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right shrink-0 ml-4">
-                    <p className="text-slate-600 text-xs tracking-widest uppercase mb-1">Puzzle</p>
-                    <p
-                      style={{ fontFamily: "Orbitron, Arial, sans-serif" }}
-                      className="text-2xl font-black text-pink-400"
-                    >
-                      {currentPuzzleIndex + 1}
-                      <span className="text-slate-600 text-lg">/{puzzles.length}</span>
-                    </p>
-                  </div>
+                  {/* Timer */}
+                  <TimerDisplay timeLeft={timeLeft} totalSeconds={totalSeconds} />
                 </div>
 
                 {/* Body */}
@@ -425,7 +513,7 @@ function PuzzlePage() {
                       value={answer}
                       onChange={(e) => setAnswer(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      disabled={result.correct === true}
+                      disabled={result.correct === true || timedOut}
                       className="w-full rounded-2xl px-6 py-5 text-lg tracking-widest text-white outline-none transition-all disabled:opacity-50"
                       style={{
                         background: "linear-gradient(135deg,rgba(0,229,255,0.10),rgba(139,92,246,0.08))",
@@ -490,6 +578,33 @@ function PuzzlePage() {
                     )}
                   </AnimatePresence>
 
+                  {/* Time's Up */}
+                  <AnimatePresence>
+                    {timedOut && result.correct === null && (
+                      <motion.div initial={{ opacity:0, scale:0.96, y:10 }}
+                        animate={{ opacity:1, scale:1, y:0 }} exit={{ opacity:0 }}>
+                        <div className="rounded-2xl p-7"
+                          style={{ background:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.35)" }}>
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className="text-3xl">⏱️</span>
+                            <h3 className="text-2xl font-black" style={{ fontFamily:"Orbitron,Arial,sans-serif", color:"#F87171" }}>
+                              TIME'S UP!
+                            </h3>
+                          </div>
+                          <p className="text-sm mb-5" style={{ color:"rgba(248,113,113,0.65)" }}>
+                            You ran out of time. Try this puzzle again.
+                          </p>
+                          <motion.button whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
+                            onClick={() => { setTimedOut(false); setAnswer(""); resetTimer(totalSeconds) }}
+                            className="px-7 py-3 rounded-xl font-black text-white"
+                            style={{ background:"linear-gradient(135deg,#F87171,#F59E0B)", fontFamily:"Orbitron,Arial,sans-serif", boxShadow:"0 0 20px rgba(248,113,113,0.3)" }}>
+                            TRY AGAIN →
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* Result */}
                   <AnimatePresence>
                     {result.correct !== null && (
@@ -511,7 +626,7 @@ function PuzzlePage() {
                               </h3>
                             </div>
                             <p className="text-emerald-300/70 text-sm mb-6">
-                              Correct frequency detected. Sequence unlocked.
+                              Puzzle cracked! You're one step closer to escaping.
                             </p>
 
                             {currentPuzzleIndex < puzzles.length - 1 ? (
@@ -544,18 +659,23 @@ function PuzzlePage() {
                             )}
                           </div>
                         ) : (
-                          <div className="border border-red-500/30 bg-red-500/[0.08] rounded-2xl p-7">
+                          <div className="rounded-2xl p-7"
+                            style={{
+                              background: "linear-gradient(135deg,rgba(245,158,11,0.07),rgba(139,92,246,0.08))",
+                              border: "1px solid rgba(245,158,11,0.35)",
+                              boxShadow: "0 0 24px rgba(245,158,11,0.08)",
+                            }}>
                             <div className="flex items-center gap-3 mb-2">
-                              <span className="text-3xl">❌</span>
+                              <span className="text-3xl">🎵</span>
                               <h3
-                                style={{ fontFamily: "Orbitron, Arial, sans-serif" }}
-                                className="text-2xl font-black text-red-400"
+                                style={{ fontFamily: "Orbitron, Arial, sans-serif", color: "#F59E0B" }}
+                                className="text-2xl font-black"
                               >
-                                ACCESS DENIED
+                                WRONG NOTE!
                               </h3>
                             </div>
-                            <p className="text-red-300/70 text-sm">
-                              Incorrect frequency detected. Try again.
+                            <p className="text-sm" style={{ color: "rgba(245,158,11,0.65)" }}>
+                              That's not the right answer. Take a closer look and try again!
                             </p>
                           </div>
                         )}

@@ -25,7 +25,7 @@ export default function Navbar() {
         WebkitBackdropFilter: "blur(20px)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}>
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="w-full px-6 h-16 flex items-center justify-between">
 
         {/* Logo */}
         <button onClick={() => navigate("/")} className="flex items-center gap-3">

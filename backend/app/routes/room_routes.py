@@ -9,10 +9,13 @@ router = APIRouter(
 )
 
 @router.get("/")
+def get_rooms(db: Session = Depends(get_db)):
+    return db.query(Room).all()
 
-def get_rooms(
-    db: Session = Depends(get_db)
-):
-
-    rooms = db.query(Room).all()
-    return rooms
+@router.get("/{room_id}")
+def get_room(room_id: int, db: Session = Depends(get_db)):
+    from fastapi import HTTPException
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    return room
