@@ -8,6 +8,7 @@ from app.routes.auth_routes import router as auth_router
 from app.routes.user_routes import router as user_router
 from app.routes.room_routes import router as room_router
 from app.routes.puzzle_routes import router as puzzle_router
+from app.routes.progress_routes import router as progress_router
 from fastapi.middleware.cors import CORSMiddleware
 
 Base.metadata.create_all(bind=engine)
@@ -32,6 +33,7 @@ app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(room_router)
 app.include_router(puzzle_router)
+app.include_router(progress_router)
 
 @app.get("/")
 def root():

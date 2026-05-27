@@ -4,6 +4,8 @@ import MainLayout from "../layouts/MainLayout"
 import RoomCard from "../components/RoomCard"
 import { getRooms } from "../services/roomService"
 import { useNavigate } from "react-router-dom"
+import { useAuth } from "../context/AuthContext"
+import { getCompletedRooms } from "../services/progressService"
 
 function SkeletonCard() {
   return (
@@ -18,21 +20,35 @@ function SkeletonCard() {
 }
 
 export default function RoomsPage() {
-  const [rooms,   setRooms]   = useState([])
-  const [loading, setLoading] = useState(true)
+  const [rooms,        setRooms]        = useState([])
+  const [completedIds, setCompletedIds] = useState([])
+  const [loading,      setLoading]      = useState(true)
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
 
-  useEffect(() => { fetchRooms() }, [])
+  useEffect(() => { fetchData() }, [isAuthenticated])
 
-  const fetchRooms = async () => {
+  const fetchData = async () => {
     try {
       const data = await getRooms()
       setRooms(data)
+      if (isAuthenticated) {
+        const ids = await getCompletedRooms()
+        setCompletedIds(ids)
+      }
     } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
     }
+  }
+
+  const isUnlocked = (room, index) => {
+    if (index === 0) return true           // first room always open
+    if (!isAuthenticated) return false     // must login to play
+    const sorted = [...rooms].sort((a, b) => a.id - b.id)
+    const prevId = sorted[index - 1]?.id
+    return completedIds.includes(prevId)
   }
 
   return (
@@ -113,6 +129,7 @@ export default function RoomsPage() {
                   <RoomCard
                     room={room}
                     onEnter={() => navigate(`/rooms/${room.id}`)}
+                    isLocked={!isUnlocked(room, i)}
                   />
                 </motion.div>
               ))}

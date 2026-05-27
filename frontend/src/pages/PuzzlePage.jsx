@@ -1,28 +1,168 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import MainLayout from "../layouts/MainLayout"
 import { getPuzzlesByRoom, submitPuzzleAnswer } from "../services/puzzleService"
+import { markPuzzleComplete, getCompletedPuzzlesForRoom } from "../services/progressService"
+import { useAuth } from "../context/AuthContext"
+
+/* ── Custom Audio Player ─────────────────────────── */
+function AudioPlayer({ src }) {
+  const audioRef             = useRef(null)
+  const [playing, setPlaying] = useState(false)
+  const [current, setCurrent] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [volume,   setVolume]   = useState(1)
+
+  const toggle = () => {
+    const a = audioRef.current
+    if (!a) return
+    playing ? a.pause() : a.play()
+    setPlaying(!playing)
+  }
+
+  const fmt = (s) => {
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60).toString().padStart(2, "0")
+    return `${m}:${sec}`
+  }
+
+  const seek = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const pct  = (e.clientX - rect.left) / rect.width
+    audioRef.current.currentTime = pct * duration
+  }
+
+  return (
+    <div className="rounded-2xl overflow-hidden"
+      style={{
+        background: "linear-gradient(135deg,rgba(0,229,255,0.08),rgba(139,92,246,0.10))",
+        border: "1.5px solid rgba(0,229,255,0.40)",
+        boxShadow: "0 0 28px rgba(0,229,255,0.12), inset 0 0 30px rgba(0,229,255,0.04)",
+      }}>
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 pt-4 pb-3"
+        style={{ borderBottom:"1px solid rgba(0,229,255,0.12)" }}>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full animate-pulse"
+            style={{ background:"#00E5FF", boxShadow:"0 0 6px #00E5FF" }} />
+          <span className="text-xs font-bold tracking-widest uppercase" style={{ color:"#00E5FF" }}>
+            Audio Stream Active
+          </span>
+        </div>
+        <div className="flex items-end gap-[3px] h-5">
+          {[60,100,45,80,55].map((h, i) => (
+            <motion.div key={i}
+              animate={{ scaleY: playing ? [1,0.2,1] : 0.2 }}
+              transition={{ repeat: Infinity, duration:1.1, delay:i*0.12, ease:"easeInOut" }}
+              className="w-1 rounded-full origin-bottom"
+              style={{ height:`${h*0.18}px`, background:"linear-gradient(to top,#00E5FF,#8B5CF6)" }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="px-5 py-4 flex items-center gap-4">
+        {/* Play/Pause */}
+        <motion.button whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }}
+          onClick={toggle}
+          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+          style={{
+            background: "linear-gradient(135deg,#00E5FF,#8B5CF6)",
+            boxShadow: "0 0 16px rgba(0,229,255,0.4)",
+          }}>
+          {playing ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#000">
+              <rect x="6" y="4" width="4" height="16" rx="1"/>
+              <rect x="14" y="4" width="4" height="16" rx="1"/>
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#000">
+              <polygon points="5,3 19,12 5,21"/>
+            </svg>
+          )}
+        </motion.button>
+
+        {/* Time */}
+        <span className="text-xs font-mono shrink-0" style={{ color:"rgba(0,229,255,0.8)", minWidth:"36px" }}>
+          {fmt(current)}
+        </span>
+
+        {/* Progress bar */}
+        <div className="flex-1 h-2 rounded-full cursor-pointer relative"
+          style={{ background:"rgba(255,255,255,0.08)" }}
+          onClick={seek}>
+          <div className="h-full rounded-full transition-all"
+            style={{
+              width: duration ? `${(current/duration)*100}%` : "0%",
+              background: "linear-gradient(90deg,#00E5FF,#8B5CF6)",
+              boxShadow: "0 0 8px rgba(0,229,255,0.6)",
+            }} />
+          {/* Thumb */}
+          <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#00E5FF] bg-[#0d0d1a]"
+            style={{
+              left: duration ? `calc(${(current/duration)*100}% - 6px)` : "-6px",
+              boxShadow:"0 0 6px rgba(0,229,255,0.8)",
+            }} />
+        </div>
+
+        {/* Duration */}
+        <span className="text-xs font-mono shrink-0" style={{ color:"rgba(255,255,255,0.35)", minWidth:"36px", textAlign:"right" }}>
+          {fmt(duration)}
+        </span>
+
+        {/* Volume */}
+        <button onClick={() => { const v = volume === 0 ? 1 : 0; setVolume(v); if(audioRef.current) audioRef.current.volume = v }}
+          className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
+          {volume === 0 ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" strokeWidth="2">
+              <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" strokeWidth="2">
+              <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </svg>
+          )}
+        </button>
+      </div>
+
+      <audio ref={audioRef} src={src}
+        onTimeUpdate={() => setCurrent(audioRef.current?.currentTime || 0)}
+        onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
+        onEnded={() => setPlaying(false)}
+      />
+    </div>
+  )
+}
 
 function PuzzlePage() {
   const { roomId } = useParams()
-  const navigate = useNavigate()
+  const navigate   = useNavigate()
+  const { user }   = useAuth()
 
-  const [puzzles, setPuzzles] = useState([])
-  const [currentPuzzleIndex, setCurrentPuzzleIndex] = useState(0)
-  const [answer, setAnswer] = useState("")
-  const [showHint, setShowHint] = useState(false)
-  const [result, setResult] = useState({ correct: null })
-  const [loading, setLoading] = useState(true)
+  const [puzzles,             setPuzzles]             = useState([])
+  const [currentPuzzleIndex,  setCurrentPuzzleIndex]  = useState(0)
+  const [answer,              setAnswer]              = useState("")
+  const [showHint,            setShowHint]            = useState(false)
+  const [result,              setResult]              = useState({ correct: null })
+  const [loading,             setLoading]             = useState(true)
 
-  useEffect(() => {
-    fetchPuzzles()
-  }, [roomId])
+  useEffect(() => { fetchPuzzles() }, [roomId])
 
   const fetchPuzzles = async () => {
     try {
-      const data = await getPuzzlesByRoom(roomId)
-      setPuzzles(data)
+      const [puzzleData, completedIds] = await Promise.all([
+        getPuzzlesByRoom(roomId),
+        getCompletedPuzzlesForRoom(roomId).catch(() => []),
+      ])
+      setPuzzles(puzzleData)
+
+      // Resume from the first puzzle the user hasn't completed yet
+      const firstUncompleted = puzzleData.findIndex(p => !completedIds.includes(p.id))
+      setCurrentPuzzleIndex(firstUncompleted === -1 ? puzzleData.length - 1 : firstUncompleted)
     } catch (error) {
       console.error(error)
     } finally {
@@ -37,6 +177,10 @@ function PuzzlePage() {
     try {
       const response = await submitPuzzleAnswer(currentPuzzle.id, answer)
       setResult(response)
+      if (response.correct) {
+        // One row per puzzle — room completion is derived from these on the backend
+        markPuzzleComplete(currentPuzzle.id).catch(() => {})
+      }
     } catch (error) {
       console.error(error)
     }
@@ -50,7 +194,7 @@ function PuzzlePage() {
     setAnswer("")
     setShowHint(false)
     setResult({ correct: null })
-    setCurrentPuzzleIndex((prev) => prev + 1)
+    setCurrentPuzzleIndex(prev => prev + 1)
   }
 
   if (loading) {
@@ -101,7 +245,9 @@ function PuzzlePage() {
     )
   }
 
-  const progressPct = Math.round(((currentPuzzleIndex + 1) / puzzles.length) * 100)
+  const progressPct = Math.round(
+    ((currentPuzzleIndex + (result.correct === true ? 1 : 0)) / puzzles.length) * 100
+  )
 
   return (
     <MainLayout>
@@ -145,7 +291,7 @@ function PuzzlePage() {
             {/* Progress */}
             <div className="mb-8">
               <div className="flex justify-between text-xs mb-2.5">
-                <span className="text-slate-500 tracking-widest uppercase">System Breach</span>
+                <span className="text-slate-500 tracking-widest uppercase">Progress</span>
                 <span className="text-cyan-400 font-bold">{progressPct}%</span>
               </div>
               <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
@@ -268,29 +414,33 @@ function PuzzlePage() {
 
                   {/* Audio player */}
                   {currentPuzzle.audio_url && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                        <span className="text-cyan-400 text-xs tracking-widest uppercase font-semibold">
-                          Audio Stream Active
-                        </span>
-                      </div>
-                      <audio controls className="w-full rounded-xl">
-                        <source src={currentPuzzle.audio_url} type="audio/mpeg" />
-                      </audio>
-                    </div>
+                    <AudioPlayer src={currentPuzzle.audio_url} />
                   )}
 
                   {/* Answer input */}
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="ENTER ACCESS CODE..."
+                      placeholder="🎵 Type your answer here..."
                       value={answer}
                       onChange={(e) => setAnswer(e.target.value)}
                       onKeyDown={handleKeyDown}
                       disabled={result.correct === true}
-                      className="w-full bg-black/60 border border-white/10 rounded-2xl px-6 py-5 text-lg tracking-widest text-cyan-300 outline-none focus:border-cyan-500/60 focus:shadow-[0_0_24px_rgba(34,211,238,0.2)] transition-all placeholder:text-slate-700 disabled:opacity-50"
+                      className="w-full rounded-2xl px-6 py-5 text-lg tracking-widest text-white outline-none transition-all disabled:opacity-50"
+                      style={{
+                        background: "linear-gradient(135deg,rgba(0,229,255,0.10),rgba(139,92,246,0.08))",
+                        border: "1.5px solid rgba(0,229,255,0.55)",
+                        caretColor: "#00E5FF",
+                        boxShadow: "0 0 24px rgba(0,229,255,0.15), inset 0 0 24px rgba(0,229,255,0.06)",
+                      }}
+                      onFocus={e => {
+                        e.target.style.borderColor = "#00E5FF"
+                        e.target.style.boxShadow = "0 0 40px rgba(0,229,255,0.35), inset 0 0 28px rgba(0,229,255,0.10)"
+                      }}
+                      onBlur={e => {
+                        e.target.style.borderColor = "rgba(0,229,255,0.55)"
+                        e.target.style.boxShadow = "0 0 24px rgba(0,229,255,0.15), inset 0 0 24px rgba(0,229,255,0.06)"
+                      }}
                     />
                   </div>
 

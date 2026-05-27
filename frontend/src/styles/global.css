@@ -13,6 +13,12 @@
 
 html { scroll-behavior: smooth; }
 
+input::placeholder {
+  color: rgba(0,229,255,0.40);
+  font-family: 'Space Grotesk', Arial, sans-serif;
+  letter-spacing: 0.04em;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -136,5 +142,12 @@ h1, h2, h3, h4 {
 ::-webkit-scrollbar-thumb:hover { background: rgba(0,229,255,0.45); }
 
 /* Audio player */
-audio { border-radius: 10px; overflow: hidden; }
-audio::-webkit-media-controls-panel { background: #0f172a; }
+audio { border-radius: 10px; overflow: hidden; width: 100%; }
+audio::-webkit-media-controls-panel {
+  background: linear-gradient(135deg, #050a18, #0a0818);
+}
+audio::-webkit-media-controls-play-button,
+audio::-webkit-media-controls-mute-button { filter: invert(1) sepia(1) saturate(3) hue-rotate(165deg); }
+audio::-webkit-media-controls-timeline { accent-color: #00E5FF; }
+audio::-webkit-media-controls-current-time-display,
+audio::-webkit-media-controls-time-remaining-display { color: rgba(0,229,255,0.75); }

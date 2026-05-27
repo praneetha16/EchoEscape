@@ -1,27 +1,23 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
-import HomePage from "../pages/HomePage"
-import RoomsPage from "../pages/RoomPage"
-import PuzzlePage from "../pages/PuzzlePage"
+import HomePage     from "../pages/HomePage"
+import RoomsPage    from "../pages/RoomPage"
+import PuzzlePage   from "../pages/PuzzlePage"
+import LoginPage    from "../pages/Login"
+import RegisterPage from "../pages/Register"
+import ProtectedRoute from "../components/ProtectedRoute"
 
-function AppRoutes() {
+export default function AppRoutes() {
   return (
-<BrowserRouter>
-<Routes>
-<Route
-          path="/"
-          element={<HomePage />}
-        />
-<Route
-          path="/rooms"
-          element={<RoomsPage />}
-        />
-<Route
-        path="/rooms/:roomId"
-        element={<PuzzlePage />}
-        />
-</Routes>
-
-</BrowserRouter>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/"          element={<HomePage />} />
+        <Route path="/login"     element={<LoginPage />} />
+        <Route path="/register"  element={<RegisterPage />} />
+        <Route path="/rooms"     element={<RoomsPage />} />
+        <Route path="/rooms/:roomId" element={
+          <ProtectedRoute><PuzzlePage /></ProtectedRoute>
+        } />
+      </Routes>
+    </BrowserRouter>
   )
 }
-export default AppRoutes
