@@ -1,15 +1,15 @@
 import api from "./api"
-export const getPuzzlesByRoom = async (
-  roomId
-) => {
-  const response = await api.get(
-    `/puzzles/room/${roomId}`
-  )
-  console.log(
-    "Puzzles API Response:",
-    response.data
-  )
-  return response.data
+
+function parsePuzzle(p) {
+  if (p.options_json && typeof p.options_json === "string") {
+    try { p.options_json = JSON.parse(p.options_json) } catch {}
+  }
+  return p
+}
+
+export const getPuzzlesByRoom = async (roomId) => {
+  const response = await api.get(`/puzzles/room/${roomId}`)
+  return (response.data || []).map(parsePuzzle)
 }
 export const submitPuzzleAnswer = async (
   puzzleId,

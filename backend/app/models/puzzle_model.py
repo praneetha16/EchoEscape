@@ -25,4 +25,6 @@ class Puzzle(Base):
     image_url = Column(String(255))
 
     hint = Column(Text)
+
+    options_json = Column(Text, nullable=True)
  

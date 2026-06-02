@@ -15,4 +15,6 @@ class UserProgress(Base):
 
     completed = Column(Boolean, default=False)
 
-    score = Column(Integer, default=0)
+    score = Column(Integer, default=0, nullable=True)
+
+    time_taken = Column(Integer, nullable=True)

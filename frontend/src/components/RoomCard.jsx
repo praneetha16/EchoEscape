@@ -1,117 +1,166 @@
 import { motion } from "framer-motion"
 
-const DIFF = {
-  easy:   { label: "EASY",   color: "#34D399", glow: "rgba(52,211,153,0.35)"  },
-  medium: { label: "MEDIUM", color: "#F59E0B", glow: "rgba(245,158,11,0.35)"  },
-  hard:   { label: "HARD",   color: "#F87171", glow: "rgba(248,113,113,0.35)" },
-}
-
-const ICONS  = ["🎸", "🎹", "🎺", "🥁", "🎻", "🎤"]
-const THEMES = [
-  { from: "#00E5FF", to: "#8B5CF6" },
-  { from: "#8B5CF6", to: "#FF2D78" },
-  { from: "#FF2D78", to: "#F59E0B" },
-  { from: "#00E5FF", to: "#FF2D78" },
-  { from: "#F59E0B", to: "#8B5CF6" },
-  { from: "#34D399", to: "#00E5FF" },
+// All neon cyber — each room gets a distinct gradient within the same palette
+const ROOM_THEMES = [
+  // Bollywood Beats — cyan → purple
+  {
+    icon: "🎬",
+    from: "#00E5FF",
+    to: "#8B5CF6",
+    accent: "#00E5FF",
+    barColor: null,       // null = use from→to gradient
+  },
+  // Sandalwood Symphony — purple → pink  (ಕ = Kannada letter Ka)
+  {
+    icon: "ಕ",
+    from: "#8B5CF6",
+    to: "#FF2D78",
+    accent: "#A78BFA",
+    barColor: null,
+  },
+  // K-Pop Fever — pink → cyan
+  {
+    icon: "💜",
+    from: "#FF2D78",
+    to: "#00E5FF",
+    accent: "#FF2D78",
+    barColor: "#FF2D78",  // single solid pink, no two-tone mix
+  },
 ]
 
-export default function RoomCard({ room, onEnter, isLocked = false }) {
-  const icon  = ICONS[(room.id - 1) % ICONS.length]
-  const theme = THEMES[(room.id - 1) % THEMES.length]
-  const diff  = DIFF[room.difficulty?.toLowerCase()] ?? DIFF.medium
+export default function RoomCard({ room, onEnter, isLocked = false, roomIndex = 0 }) {
+  const theme = ROOM_THEMES[roomIndex % ROOM_THEMES.length]
 
   return (
     <motion.div
-      whileHover={isLocked ? {} : { y: -6 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
+      whileHover={isLocked ? {} : { y: -8, scale: 1.02 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
       onClick={isLocked ? undefined : onEnter}
-      className={`group relative rounded-2xl p-[1px] overflow-hidden ${isLocked ? "cursor-not-allowed" : "cursor-pointer"}`}
-      style={{ background: "rgba(255,255,255,0.06)", opacity: isLocked ? 0.6 : 1 }}
+      className={`group relative rounded-2xl overflow-hidden h-full ${isLocked ? "cursor-not-allowed" : "cursor-pointer"}`}
+      style={{ padding: "1.5px", opacity: isLocked ? 0.5 : 1 }}
     >
-      {/* gradient border on hover (unlocked only) */}
+      {/* Gradient border — always visible, brightens on hover */}
+      <div
+        className="absolute inset-0 rounded-2xl transition-opacity duration-300"
+        style={{
+          background: `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
+          opacity: isLocked ? 0.15 : 0.35,
+        }}
+      />
+      {/* Hover glow layer */}
       {!isLocked && (
         <div
           className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}
+          style={{
+            background: `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
+            opacity: 0,
+          }}
         />
       )}
 
-      {/* card body */}
-      <div className="relative rounded-2xl p-7 h-full" style={{ background: "#0d0d1a" }}>
-
-        {/* top glow (unlocked hover only) */}
+      {/* Card body */}
+      <div
+        className="relative rounded-[14px] p-7 h-full flex flex-col"
+        style={{
+          background: "#080814",
+          boxShadow: isLocked ? "none" : `inset 0 0 40px ${theme.from}08`,
+        }}
+      >
+        {/* Corner glow on hover */}
         {!isLocked && (
-          <div
-            className="absolute top-0 right-0 w-32 h-32 rounded-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-            style={{ background: `radial-gradient(circle, ${theme.from}22, transparent 70%)`, filter: "blur(20px)" }}
+          <motion.div
+            className="absolute top-0 right-0 w-40 h-40 rounded-full pointer-events-none"
+            initial={{ opacity: 0 }}
+            whileHover={{ opacity: 1 }}
+            style={{
+              background: `radial-gradient(circle, ${theme.from}20, transparent 70%)`,
+              filter: "blur(20px)",
+            }}
           />
         )}
 
-        {/* icon */}
-        <div
-          className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl mb-6 transition-transform duration-300 ${!isLocked && "group-hover:scale-110"}`}
-          style={{
-            background: isLocked ? "rgba(255,255,255,0.04)" : `linear-gradient(135deg, ${theme.from}18, ${theme.to}18)`,
-            border: isLocked ? "1px solid rgba(255,255,255,0.08)" : `1px solid ${theme.from}30`,
-            filter: isLocked ? "grayscale(1)" : "none",
-          }}
-        >
-          {isLocked ? "🔒" : icon}
+        {/* Icon row */}
+        <div className="mb-5">
+          <motion.div
+            whileHover={isLocked ? {} : { scale: 1.12, rotate: 5 }}
+            transition={{ duration: 0.2 }}
+            className="w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{
+              background: isLocked
+                ? "rgba(255,255,255,0.04)"
+                : `linear-gradient(135deg, ${theme.from}20, ${theme.to}20)`,
+              border: `1.5px solid ${isLocked ? "rgba(255,255,255,0.08)" : `${theme.from}50`}`,
+              boxShadow: isLocked ? "none" : `0 0 20px ${theme.from}25`,
+              filter: isLocked ? "grayscale(1)" : "none",
+              fontSize: isLocked ? "1.4rem" : theme.icon.length === 1 && theme.icon.charCodeAt(0) > 127 && theme.icon.charCodeAt(0) < 0x1000 ? "1.5rem" : "1.4rem",
+              fontWeight: 700,
+              color: isLocked ? "rgba(255,255,255,0.3)" : theme.accent,
+              fontFamily: isLocked ? "inherit" : "inherit",
+            }}
+          >
+            {isLocked ? "🔒" : theme.icon}
+          </motion.div>
         </div>
 
-        {/* name */}
+        {/* Title */}
         <h2
-          className="text-2xl font-bold mb-2 leading-snug transition-colors duration-200"
+          className="text-xl font-bold mb-2 leading-snug"
           style={{
-            fontFamily: "'Space Grotesk',Arial,sans-serif",
-            color: isLocked ? "rgba(255,255,255,0.35)" : "white",
+            fontFamily: "'Space Grotesk', Arial, sans-serif",
+            color: isLocked ? "rgba(255,255,255,0.3)" : "white",
           }}
         >
           {room.name}
         </h2>
 
-        {/* description */}
+        {/* Description */}
         <p
-          className="text-sm leading-relaxed mb-7 line-clamp-2"
-          style={{ color: isLocked ? "rgba(255,255,255,0.20)" : "rgba(255,255,255,0.45)" }}
+          className="text-sm leading-relaxed mb-5 line-clamp-3 flex-1"
+          style={{ color: isLocked ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.45)" }}
         >
-          {isLocked ? "Complete the previous room to unlock this challenge." : room.description}
+          {isLocked ? "Complete the previous room to unlock." : room.description}
         </p>
 
-        {/* footer */}
-        <div className="flex items-center justify-between">
-          {/* difficulty badge */}
-          <span
-            className="text-[11px] font-black px-3 py-1.5 rounded-full tracking-widest"
-            style={{
-              background: isLocked ? "rgba(255,255,255,0.04)" : `${diff.color}18`,
-              border: isLocked ? "1px solid rgba(255,255,255,0.08)" : `1px solid ${diff.color}50`,
-              color: isLocked ? "rgba(255,255,255,0.25)" : diff.color,
-              fontFamily: "'Orbitron',Arial,sans-serif",
-            }}
-          >
-            {isLocked ? "LOCKED" : diff.label}
-          </span>
+        {/* Animated mini equalizer */}
+        {!isLocked && (
+          <div className="flex items-end gap-1 h-6 mb-5">
+            {[35, 65, 45, 90, 55, 80, 40, 70].map((h, i) => (
+              <motion.div
+                key={i}
+                animate={{ height: [`${h * 0.26}px`, `${h * 0.08}px`, `${h * 0.26}px`] }}
+                transition={{ repeat: Infinity, duration: 1.4, delay: i * 0.1, ease: "easeInOut" }}
+                className="flex-1 rounded-full"
+                style={{
+                  minHeight: "3px",
+                  background: theme.barColor
+                    ? theme.barColor
+                    : `linear-gradient(to top, ${theme.from}, ${theme.to})`,
+                  boxShadow: `0 0 4px ${theme.barColor || theme.from}60`,
+                }}
+              />
+            ))}
+          </div>
+        )}
 
+        {/* Footer */}
+        <div className="flex items-center justify-end">
           {isLocked ? (
-            <span className="text-sm font-bold flex items-center gap-1.5" style={{ color: "rgba(255,255,255,0.20)" }}>
+            <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.18)" }}>
               🔒 Locked
             </span>
           ) : (
-            <span
-              className="text-sm font-bold flex items-center gap-1 transition-all duration-200 group-hover:gap-2"
-              style={{ color: theme.from }}
+            <motion.span
+              className="text-sm font-bold flex items-center gap-1"
+              style={{ color: theme.accent }}
             >
-              Enter Room
+              Enter Arena
               <motion.span
-                className="inline-block"
-                animate={{ x: [0, 3, 0] }}
-                transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut" }}
+                animate={{ x: [0, 4, 0] }}
+                transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
               >
                 →
               </motion.span>
-            </span>
+            </motion.span>
           )}
         </div>
       </div>
