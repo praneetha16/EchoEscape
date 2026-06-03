@@ -128,7 +128,7 @@ export default function HomePage() {
               className="w-2 h-2 rounded-full animate-pulse"
               style={{ background: "#00E5FF" }}
             />
-            Music-Powered Escape Rooms
+            Music-Powered Puzzle Rooms
           </motion.div>
 
           {/* headline */}
