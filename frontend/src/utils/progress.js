@@ -1,4 +1,4 @@
-const KEY = "echoescape-completed"
+const KEY = "maestro-completed"
 
 /** Returns array of completed room IDs */
 export const getCompleted = () => {

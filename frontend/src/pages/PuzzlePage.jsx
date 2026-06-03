@@ -364,7 +364,7 @@ export default function PuzzlePage() {
               </button>
               <h1 className="text-xl font-black tracking-widest"
                 style={{ fontFamily: "Orbitron, Arial, sans-serif", background: `linear-gradient(90deg, ${roomMeta.from}, ${roomMeta.to})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                ECHO ESCAPE
+                MAESTRO
               </h1>
               <p className="text-slate-600 text-xs mt-1 tracking-widest uppercase">Music Vault System</p>
             </div>

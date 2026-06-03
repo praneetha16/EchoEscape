@@ -42,16 +42,10 @@ export default function Navbar() {
 
         {/* Logo */}
         <button onClick={() => navigate("/")} className="flex items-center gap-3">
-          <div style={{
-            width: "32px", height: "32px", borderRadius: "10px", flexShrink: 0,
-            background: "linear-gradient(135deg,#00E5FF,#8B5CF6)",
-            boxShadow: "0 0 16px rgba(0,229,255,0.35)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "'Orbitron',Arial,sans-serif", fontWeight: 900, fontSize: "11px", color: "#000",
-          }}>EE</div>
+          <img src="/favicon.svg" alt="Maestro" style={{ width:"32px", height:"32px", borderRadius:"10px", flexShrink:0, boxShadow:"0 0 16px rgba(0,229,255,0.35)" }} />
           <span className="hidden sm:block text-lg font-black tracking-widest"
             style={{ fontFamily: "'Orbitron',Arial,sans-serif", color: "white" }}>
-            ECHO<span style={{ color: "#00E5FF" }}>ESCAPE</span>
+            MAE<span style={{ color: "#00E5FF" }}>STRO</span>
           </span>
         </button>
 
@@ -65,17 +59,20 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-4">
           {isAuthenticated ? (
             <>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl"
-                style={{ background: "rgba(0,229,255,0.08)", border: "1px solid rgba(0,229,255,0.20)" }}>
-                <span className="w-2 h-2 rounded-full" style={{ background: "#00E5FF" }} />
-                <span className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.85)" }}>
+              <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl"
+                style={{ background:"linear-gradient(135deg,rgba(0,229,255,0.08),rgba(139,92,246,0.08))", border:"1px solid rgba(0,229,255,0.2)", boxShadow:"0 0 18px rgba(0,229,255,0.08)" }}>
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black"
+                  style={{ background:"linear-gradient(135deg,#00E5FF,#8B5CF6)", color:"#05050F", fontFamily:"'Orbitron',sans-serif", boxShadow:"0 0 10px rgba(0,229,255,0.4)" }}>
+                  {user?.username?.[0]?.toUpperCase()}
+                </div>
+                <span className="text-sm font-semibold tracking-wide" style={{ color:"#fff", fontFamily:"'Space Grotesk',sans-serif" }}>
                   {user?.username}
                 </span>
               </div>
               <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
                 onClick={handleLogout}
-                className="px-4 py-2 rounded-xl text-sm font-bold transition-colors"
-                style={{ color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                className="px-4 py-2 rounded-2xl text-xs font-bold tracking-widest uppercase"
+                style={{ fontFamily:"'Orbitron',sans-serif", color:"#8B5CF6", border:"1px solid rgba(139,92,246,0.35)", background:"rgba(139,92,246,0.07)" }}>
                 Logout
               </motion.button>
             </>
@@ -94,12 +91,11 @@ export default function Navbar() {
               </motion.button>
               <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
                 onClick={() => navigate("/register")}
-                className="px-5 py-2.5 rounded-xl font-black text-sm"
+                className="px-5 py-2.5 rounded-xl font-black text-sm text-black"
                 style={{
-                  background: "transparent",
+                  background: "linear-gradient(135deg,#00E5FF,#8B5CF6)",
                   fontFamily: "'Orbitron',Arial,sans-serif",
-                  border: "1.5px solid rgba(0,229,255,0.4)",
-                  color: "#00E5FF",
+                  boxShadow: "0 0 20px rgba(0,229,255,0.25)",
                   letterSpacing: "0.04em",
                 }}>
                 SIGN UP

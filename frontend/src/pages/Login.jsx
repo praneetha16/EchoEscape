@@ -35,7 +35,7 @@ export default function LoginPage() {
     setError(""); setLoading(true)
     try {
       const { access_token } = await loginUser(email, password)
-      localStorage.setItem("echoescape-token", access_token) // must be set before getCurrentUser
+      localStorage.setItem("maestro-token", access_token) // must be set before getCurrentUser
       const userData = await getCurrentUser()
       login(access_token, userData)
       navigate("/rooms")
@@ -81,16 +81,10 @@ export default function LoginPage() {
 
             {/* Logo */}
             <button onClick={() => navigate("/")} className="flex items-center justify-center gap-2 mx-auto mb-6">
-              <div style={{
-                width:"36px", height:"36px", borderRadius:"12px",
-                background:"linear-gradient(135deg,#00E5FF,#8B5CF6)",
-                boxShadow:"0 0 20px rgba(0,229,255,0.4)",
-                display:"flex", alignItems:"center", justifyContent:"center",
-                fontFamily:"'Orbitron',Arial,sans-serif", fontWeight:900, fontSize:"12px", color:"#000"
-              }}>EE</div>
+              <img src="/favicon.svg" alt="Maestro" style={{ width:"36px", height:"36px", borderRadius:"12px", boxShadow:"0 0 20px rgba(0,229,255,0.4)" }} />
               <span style={{ fontFamily:"'Orbitron',Arial,sans-serif", fontWeight:900, fontSize:"1.1rem" }}>
-                <span className="text-white">ECHO</span>
-                <span style={{ color:"#00E5FF" }}>ESCAPE</span>
+                <span className="text-white">MAE</span>
+                <span style={{ color:"#00E5FF" }}>STRO</span>
               </span>
             </button>
 

@@ -6,7 +6,7 @@ const api = axios.create({
 
 // Attach JWT token to every request automatically
 api.interceptors.request.use(config => {
-  const token = localStorage.getItem("echoescape-token")
+  const token = localStorage.getItem("maestro-token")
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })

@@ -2,6 +2,16 @@ import { motion } from "framer-motion"
 import { useNavigate } from "react-router-dom"
 import MainLayout from "../layouts/MainLayout"
 
+/* ─── letter animation variants ────────────────── */
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.2 } },
+}
+const letterVariants = {
+  hidden: { opacity: 0, y: 60, rotateX: -90, scale: 0.5 },
+  visible: { opacity: 1, y: 0, rotateX: 0, scale: 1, transition: { type: "spring", stiffness: 120, damping: 12 } },
+}
+
 /* ─── tiny helpers ─────────────────────────────── */
 const WAVE_HEIGHTS = [35, 65, 50, 90, 70, 100, 55, 80, 45, 75, 60, 85]
 
@@ -51,8 +61,8 @@ const FEATURES = [
 ]
 
 const STATS = [
-  { value: "3+", label: "Escape Rooms" },
-  { value: "20+", label: "Audio Puzzles" },
+  { value: "3",  label: "Music Rooms" },
+  { value: "8+", label: "Puzzles Per Room" },
   { value: "∞",  label: "Replayability" },
 ]
 
@@ -123,24 +133,34 @@ export default function HomePage() {
 
           {/* headline */}
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.7 }}
             className="font-black leading-none mb-6 flicker"
-            style={{ fontSize: "clamp(4rem,12vw,9rem)", letterSpacing: "-0.02em" }}
+            style={{ fontSize: "clamp(4rem,12vw,9rem)", letterSpacing: "0.04em", perspective: "600px" }}
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
           >
-            <span className="text-white">ECHO</span>
-            <br />
-            <span
-              className="glow-cyan"
-              style={{
-                background: "linear-gradient(90deg,#00E5FF,#8B5CF6,#FF2D78)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              ESCAPE
-            </span>
+            {"MAESTRO".split("").map((letter, i) => (
+              <motion.span
+                key={i}
+                variants={letterVariants}
+                whileHover={{
+                  y: -18, scale: 1.3,
+                  rotate: i % 2 === 0 ? -8 : 8,
+                  filter: "drop-shadow(0 0 40px rgba(0,229,255,1)) drop-shadow(0 0 80px rgba(139,92,246,0.8))",
+                  transition: { type: "spring", stiffness: 300, damping: 10 },
+                }}
+                style={{
+                  display: "inline-block",
+                  cursor: "default",
+                  background: "linear-gradient(90deg,#00E5FF,#8B5CF6)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  filter: "drop-shadow(0 0 18px rgba(0,229,255,0.6))",
+                }}
+              >
+                {letter}
+              </motion.span>
+            ))}
           </motion.h1>
 
           {/* tagline */}
@@ -386,7 +406,7 @@ export default function HomePage() {
             className="font-black text-sm tracking-widest"
             style={{ fontFamily: "'Orbitron',Arial,sans-serif", color: "rgba(255,255,255,0.25)" }}
           >
-            ECHO<span style={{ color: "#00E5FF" }}>ESCAPE</span>
+            MAE<span style={{ color: "#00E5FF" }}>STRO</span>
           </span>
           <span className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
             Built with ♪ and code

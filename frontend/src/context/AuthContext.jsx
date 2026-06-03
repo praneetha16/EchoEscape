@@ -9,22 +9,22 @@ export function AuthProvider({ children }) {
 
   // On app start, restore session from localStorage
   useEffect(() => {
-    const token = localStorage.getItem("echoescape-token")
+    const token = localStorage.getItem("maestro-token")
     if (!token) { setLoading(false); return }
 
     getCurrentUser()
       .then(data => setUser(data))
-      .catch(() => localStorage.removeItem("echoescape-token"))
+      .catch(() => localStorage.removeItem("maestro-token"))
       .finally(() => setLoading(false))
   }, [])
 
   const login = (token, userData) => {
-    localStorage.setItem("echoescape-token", token)
+    localStorage.setItem("maestro-token", token)
     setUser(userData)
   }
 
   const logout = () => {
-    localStorage.removeItem("echoescape-token")
+    localStorage.removeItem("maestro-token")
     setUser(null)
   }
 
