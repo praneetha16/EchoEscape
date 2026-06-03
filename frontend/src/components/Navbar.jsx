@@ -2,12 +2,18 @@ import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "../context/AuthContext"
+import { playTitleSong } from "../utils/titleAudio"
 
 export default function Navbar() {
   const navigate  = useNavigate()
   const location  = useLocation()
   const { user, isAuthenticated, logout } = useAuth()
   const [open, setOpen] = useState(false)
+
+  const handleLogoClick = () => {
+    playTitleSong()
+    navigate("/")
+  }
 
   const isActive = (path) => location.pathname.startsWith(path)
 
@@ -41,7 +47,7 @@ export default function Navbar() {
       <div className="w-full px-6 h-16 flex items-center justify-between">
 
         {/* Logo */}
-        <button onClick={() => navigate("/")} className="flex items-center gap-3">
+        <button onClick={handleLogoClick} className="flex items-center gap-3">
           <img src="/favicon.svg" alt="Maestro" style={{ width:"32px", height:"32px", borderRadius:"10px", flexShrink:0, boxShadow:"0 0 16px rgba(0,229,255,0.35)" }} />
           <span className="hidden sm:block text-lg font-black tracking-widest"
             style={{ fontFamily: "'Orbitron',Arial,sans-serif", color: "white" }}>

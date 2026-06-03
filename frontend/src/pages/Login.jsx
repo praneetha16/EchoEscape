@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
+import { playTitleSong } from "../utils/titleAudio"
 import { motion } from "framer-motion"
 import { loginUser, getCurrentUser } from "../services/authService"
 import { useAuth } from "../context/AuthContext"
@@ -80,7 +81,7 @@ export default function LoginPage() {
             style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
 
             {/* Logo */}
-            <button onClick={() => navigate("/")} className="flex items-center justify-center gap-2 mx-auto mb-6">
+            <button onClick={() => { playTitleSong(); navigate("/") }} className="flex items-center justify-center gap-2 mx-auto mb-6">
               <img src="/favicon.svg" alt="Maestro" style={{ width:"36px", height:"36px", borderRadius:"12px", boxShadow:"0 0 20px rgba(0,229,255,0.4)" }} />
               <span style={{ fontFamily:"'Orbitron',Arial,sans-serif", fontWeight:900, fontSize:"1.1rem" }}>
                 <span className="text-white">MAE</span>
