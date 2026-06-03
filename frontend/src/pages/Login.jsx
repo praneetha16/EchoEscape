@@ -94,7 +94,7 @@ export default function LoginPage() {
               WELCOME BACK
             </h1>
             <p style={{ color:"rgba(255,255,255,0.4)", fontSize:"0.9rem" }}>
-              Sign in to continue your escape
+              Sign in to continue your musical quest.
             </p>
           </div>
 
@@ -114,7 +114,7 @@ export default function LoginPage() {
             <div>
               <label className="block text-xs font-semibold mb-2 tracking-widest uppercase"
                 style={{ color:"rgba(0,229,255,0.7)" }}>Email</label>
-              <input type="email" placeholder="you@example.com" value={email}
+              <input type="email" placeholder="Enter your email" value={email}
                 onChange={e => setEmail(e.target.value)}
                 className={FIELD} style={FIELD_STYLE}
                 onFocus={e => Object.assign(e.target.style, FIELD_FOCUS)}

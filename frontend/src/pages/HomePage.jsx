@@ -171,7 +171,7 @@ export default function HomePage() {
             className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
             style={{ fontFamily: "'Space Grotesk',Arial,sans-serif" }}
           >
-            Decode hidden songs, crack audio puzzles, and escape immersive
+            Decode hidden songs, crack audio puzzles, and conquer immersive
             rooms using nothing but your ears, memory, and rhythm.
           </motion.p>
 
@@ -284,7 +284,7 @@ export default function HomePage() {
               How It Works
             </h2>
             <p className="text-slate-400 text-lg max-w-md mx-auto">
-              Three stages. One musical quiz.
+              Pick a room. Solve the puzzles. Own the leaderboard.
             </p>
           </motion.div>
 
@@ -369,7 +369,7 @@ export default function HomePage() {
                 className="font-black text-3xl md:text-5xl text-white mb-5"
                 style={{ fontFamily: "'Orbitron',Arial,sans-serif" }}
               >
-                Ready to Escape?
+                Ready to Play?
               </h2>
               <p
                 className="text-lg mb-10 max-w-lg mx-auto"

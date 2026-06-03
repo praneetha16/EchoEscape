@@ -99,7 +99,7 @@ export default function RegisterPage() {
               CREATE ACCOUNT
             </h1>
             <p style={{ color:"rgba(255,255,255,0.4)", fontSize:"0.9rem" }}>
-              Join the escape. Start your journey.
+              Register and start your journey.
             </p>
           </div>
 
@@ -118,7 +118,7 @@ export default function RegisterPage() {
             <div>
               <label className="block text-xs font-semibold mb-2 tracking-widest uppercase"
                 style={{ color:"rgba(0,229,255,0.7)" }}>Username</label>
-              <input type="text" placeholder="yourusername" value={username}
+              <input type="text" placeholder="Enter your username" value={username}
                 onChange={e => setUsername(e.target.value)}
                 className={FIELD} style={FIELD_STYLE}
                 onFocus={e => Object.assign(e.target.style, FIELD_FOCUS)}
@@ -130,7 +130,7 @@ export default function RegisterPage() {
             <div>
               <label className="block text-xs font-semibold mb-2 tracking-widest uppercase"
                 style={{ color:"rgba(0,229,255,0.7)" }}>Email</label>
-              <input type="email" placeholder="you@example.com" value={email}
+              <input type="email" placeholder="Enter your email" value={email}
                 onChange={e => setEmail(e.target.value)}
                 className={FIELD} style={FIELD_STYLE}
                 onFocus={e => Object.assign(e.target.style, FIELD_FOCUS)}
@@ -142,7 +142,7 @@ export default function RegisterPage() {
             <div>
               <label className="block text-xs font-semibold mb-2 tracking-widest uppercase"
                 style={{ color:"rgba(0,229,255,0.7)" }}>Password</label>
-              <input type="password" placeholder="Min. 6 characters" value={password}
+              <input type="password" placeholder="Minimum 6 characters" value={password}
                 onChange={e => setPassword(e.target.value)}
                 className={FIELD} style={FIELD_STYLE}
                 onFocus={e => Object.assign(e.target.style, FIELD_FOCUS)}
