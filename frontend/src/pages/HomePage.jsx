@@ -54,7 +54,7 @@ const FEATURES = [
   },
   {
     emoji: "🏆",
-    title: "Escape & Conquer",
+    title: "Score & Conquer",
     desc: "Crack every puzzle in the room, beat the clock, and etch your name into the leaderboard.",
     color: "#FF2D78",
   },
@@ -284,7 +284,7 @@ export default function HomePage() {
               How It Works
             </h2>
             <p className="text-slate-400 text-lg max-w-md mx-auto">
-              Three stages. One musical escape.
+              Three stages. One musical quiz.
             </p>
           </motion.div>
 
