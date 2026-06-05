@@ -2,6 +2,68 @@ import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
 const SECONDS_PER_Q = 10
+const SECONDS_PER_AUDIO  = 25
+
+function AudioClipButton({ audioUrl }) {
+  const audioRef  = useRef(null)
+  const timerRef  = useRef(null)
+  const [playing, setPlaying]  = useState(false)
+  const [played,  setPlayed]   = useState(false)
+  const CLIP_SEC  = 8
+
+  // auto-play once when this question mounts
+  useEffect(() => {
+    const t = setTimeout(() => playClip(), 400)
+    return () => {
+      clearTimeout(t)
+      clearInterval(timerRef.current)
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0 }
+    }
+  }, [audioUrl])
+
+  const playClip = () => {
+    if (playing || !audioUrl) return
+    const audio = audioRef.current
+    audio.currentTime = 0
+    audio.volume = 1
+    audio.play().catch(() => {})
+    setPlaying(true)
+    setPlayed(true)
+    const start = Date.now()
+    timerRef.current = setInterval(() => {
+      if ((Date.now() - start) / 1000 >= CLIP_SEC) {
+        clearInterval(timerRef.current)
+        audio.pause()
+        audio.currentTime = 0
+        setPlaying(false)
+      }
+    }, 50)
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <audio ref={audioRef} src={audioUrl} preload="auto" />
+      <span className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.7)" }}>
+        🎧 Name this song:
+      </span>
+      <motion.button
+        whileHover={!playing ? { scale: 1.05 } : {}}
+        whileTap={!playing ? { scale: 0.95 } : {}}
+        onClick={playClip}
+        disabled={playing}
+        className="flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest"
+        style={{
+          background: playing ? "rgba(255,45,120,0.12)" : "linear-gradient(135deg,#FF2D78,#8B5CF6)",
+          border: playing ? "1.5px solid rgba(255,45,120,0.3)" : "none",
+          color: playing ? "rgba(255,255,255,0.4)" : "#fff",
+          fontFamily: "'Orbitron',sans-serif",
+          cursor: playing ? "not-allowed" : "pointer",
+        }}>
+        {playing ? "▶ Playing…" : played ? "↺ Replay" : "▶ Play Clip"}
+      </motion.button>
+    </div>
+  )
+}
 
 export default function RapidFireRound({ puzzle, onDirectComplete }) {
   const questions = puzzle.options_json?.questions || []
@@ -12,16 +74,25 @@ export default function RapidFireRound({ puzzle, onDirectComplete }) {
   const [phase, setPhase]         = useState("playing") // playing | summary
   const [showFeedback, setShowFeedback] = useState(null) // "correct" | "wrong" | null
   const intervalRef               = useRef(null)
+  const skipFiredRef              = useRef(false)
+
+  const getSecondsForQ = (idx) =>
+    questions[idx]?.type === "audio" ? SECONDS_PER_AUDIO : SECONDS_PER_Q
 
   useEffect(() => {
     if (phase !== "playing") return
-    setTimeLeft(SECONDS_PER_Q)
+    skipFiredRef.current = false          // reset guard for each new question
+    const secs = getSecondsForQ(current)
+    setTimeLeft(secs)
     clearInterval(intervalRef.current)
     intervalRef.current = setInterval(() => {
       setTimeLeft(t => {
         if (t <= 1) {
           clearInterval(intervalRef.current)
-          handleSkip()
+          if (!skipFiredRef.current) {
+            skipFiredRef.current = true   // prevent double-fire
+            handleSkip()
+          }
           return 0
         }
         return t - 1
@@ -31,6 +102,7 @@ export default function RapidFireRound({ puzzle, onDirectComplete }) {
   }, [current, phase])
 
   const handleSkip = () => {
+    skipFiredRef.current = true
     clearInterval(intervalRef.current)
     const newResults = [...results, false]
     setResults(newResults)
@@ -46,10 +118,21 @@ export default function RapidFireRound({ puzzle, onDirectComplete }) {
     }, 700)
   }
 
+  const isAnswerCorrect = (expected, given) => {
+    const normalize = s => s.toLowerCase().trim()
+    const exp = normalize(expected)
+    const giv = normalize(given)
+    if (exp === giv) return true
+    // accept if all significant words of the answer are present
+    const words = exp.split(/\s+/).filter(w => w.length > 2)
+    return words.length > 0 && words.every(w => giv.includes(w))
+  }
+
   const handleSubmit = () => {
+    skipFiredRef.current = true
     clearInterval(intervalRef.current)
     const q = questions[current]
-    const correct = q.a.toLowerCase().trim() === answer.toLowerCase().trim()
+    const correct = isAnswerCorrect(q.a, answer)
     const newResults = [...results, correct]
     setResults(newResults)
     setShowFeedback(correct ? "correct" : "wrong")
@@ -168,15 +251,21 @@ export default function RapidFireRound({ puzzle, onDirectComplete }) {
             {current + 1}
           </span>
           <AnimatePresence mode="wait">
-            <motion.p
+            <motion.div
               key={current}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.25 }}
-              className="text-base font-semibold text-white flex-1">
-              {q?.q}
-            </motion.p>
+              className="flex-1">
+              {q?.type === "audio"
+                ? <AudioClipButton audioUrl={q.audio_url} />
+                : <p className="text-base font-semibold text-white"
+                    style={{ fontFamily: "'Space Grotesk', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif" }}>
+                    {q?.q}
+                  </p>
+              }
+            </motion.div>
           </AnimatePresence>
         </div>
 
@@ -184,7 +273,7 @@ export default function RapidFireRound({ puzzle, onDirectComplete }) {
         <div className="h-1 rounded-full mb-5 overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
           <motion.div
             className="h-full rounded-full"
-            animate={{ width: `${(timeLeft / SECONDS_PER_Q) * 100}%` }}
+            animate={{ width: `${(timeLeft / getSecondsForQ(current)) * 100}%` }}
             transition={{ duration: 1, ease: "linear" }}
             style={{ background: timerColor, boxShadow: `0 0 8px ${timerColor}` }}
           />

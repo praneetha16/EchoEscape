@@ -25,6 +25,7 @@ const TYPE_LABELS = {
   rapid_fire:       "⚡ Rapid Fire",
   beat_match:       "🎯 Beat Match",
   missing_word:     "📝 Missing Word",
+  five_second_clip: "🎧 5-Second Clip",
 }
 
 const TIMER_SECONDS = { easy: 60, medium: 45, hard: 35 }
@@ -499,8 +500,8 @@ export default function PuzzlePage() {
                     timerActive={timerActive}
                   />
 
-                  {/* Audio player — shown for audio-based types */}
-                  {currentPuzzle.audio_url && (
+                  {/* Audio player — shown for audio-based types, but NOT for five_second_clip (has its own player) */}
+                  {currentPuzzle.audio_url && currentPuzzle.type !== "five_second_clip" && (
                     <AudioPlayer src={currentPuzzle.audio_url} />
                   )}
 
