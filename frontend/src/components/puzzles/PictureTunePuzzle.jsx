@@ -1,8 +1,19 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { motion } from "framer-motion"
 
 export default function PictureTunePuzzle({ puzzle }) {
   const [imageLoaded, setImageLoaded] = useState(false)
+
+  // Convert base64 to data URL if image_url is base64, otherwise use as-is
+  const imageSrc = useMemo(() => {
+    if (!puzzle.image_url) return null
+    // Check if it's base64 (doesn't start with http/https)
+    if (puzzle.image_url.startsWith('http://') || puzzle.image_url.startsWith('https://')) {
+      return puzzle.image_url
+    }
+    // Assume base64, create data URL
+    return `data:image/jpeg;base64,${puzzle.image_url}`
+  }, [puzzle.image_url])
 
   return (
     <div className="rounded-2xl overflow-hidden"
@@ -22,7 +33,7 @@ export default function PictureTunePuzzle({ puzzle }) {
       </div>
 
       <div className="p-4">
-        {puzzle.image_url ? (
+        {imageSrc ? (
           <div className="relative rounded-xl overflow-hidden"
             style={{ background: "rgba(0,0,0,0.4)" }}>
             {!imageLoaded && (
@@ -37,7 +48,7 @@ export default function PictureTunePuzzle({ puzzle }) {
               </div>
             )}
             <img
-              src={puzzle.image_url}
+              src={imageSrc}
               alt="Song clue"
               onLoad={() => setImageLoaded(true)}
               className="w-full rounded-xl"

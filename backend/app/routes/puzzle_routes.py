@@ -1,3 +1,5 @@
+import base64
+
 from fastapi import APIRouter, Depends
 
 from sqlalchemy.orm import Session
@@ -17,6 +19,22 @@ router = APIRouter(
     tags=["Puzzles"]
 
 )
+def serialize_puzzle(puzzle):
+    """Convert puzzle with binary image data to JSON-serializable format with base64"""
+    puzzle_dict = {
+        "id": puzzle.id,
+        "room_id": puzzle.room_id,
+        "puzzle_order": puzzle.puzzle_order,
+        "type": puzzle.type,
+        "title": puzzle.title,
+        "question": puzzle.question,
+        "answer": puzzle.answer,
+        "audio_url": puzzle.audio_url,
+        "image_url": base64.b64encode(puzzle.image_data).decode() if puzzle.image_data else None,
+        "hint": puzzle.hint,
+        "options_json": puzzle.options_json,
+    }
+    return puzzle_dict
 
 @router.get("/room/{room_id}")
 
@@ -34,7 +52,7 @@ def get_puzzles_by_room(
 
     ).all()
 
-    return puzzles
+    return [serialize_puzzle(p) for p in puzzles]
 
 class AnswerSchema(BaseModel):
     answer: str

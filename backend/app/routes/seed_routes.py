@@ -312,7 +312,7 @@ def seed_database(db: Session = Depends(get_db)):
             question=p["question"],
             answer=p["answer"],
             audio_url=p.get("audio_url"),
-            image_url=p.get("image_url"),
+            image_data=None,
             hint=p["hint"],
             options_json=p.get("options_json"),
         ))

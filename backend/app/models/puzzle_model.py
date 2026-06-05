@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, LargeBinary
 
 from app.database.connection import Base
 
@@ -22,7 +22,7 @@ class Puzzle(Base):
 
     audio_url = Column(String(255))
 
-    image_url = Column(String(255))
+    image_data = Column(LargeBinary, nullable=True)
 
     hint = Column(Text)
 
