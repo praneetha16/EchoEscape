@@ -47,4 +47,4 @@ app.include_router(seed_router)
 
 @app.get("/")
 def root():
-    return {"message": "EchoEscape Backend Running"}
+    return {"message": "Maestro Backend Running"}
